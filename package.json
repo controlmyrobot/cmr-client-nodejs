@@ -1,0 +1,25 @@
+{
+  "name": "cmr-client-nodejs",
+  "version": "0.0.1",
+  "scripts": {
+    "start": "node start.js",
+    "start-custom": "node start-custom.js",
+    "dev": "nodemon start.js"
+  },
+  "dependencies": {
+    "child_process": "^1.0.2",
+    "i2c-bus": "^5.2.2",
+    "nodemon": "^2.0.20",
+    "pca9685": "^5.0.0",
+    "rpio": "^2.4.2",
+    "serialport": "^10.5.0",
+    "socket.io-client": "^4.5.4"
+  },
+  "engines": {
+    "node": "19.x"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.7",
+    "utf-8-validate": "^5.0.10"
+  }
+}
