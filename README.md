@@ -45,13 +45,40 @@ yarn install
 Use your Robot ID and API key to start the nodejs client:
 
 ```bash
-ROBOT_ID=abc123 ROBOT_SECRET=321cba yarn run start
+ROBOT_ID=abc123 ROBOT_SECRET_KEY=321cba yarn run start
 ```
+
+### Auto boot
+
+Add this to `/etc/systemd/system/robot.service`
+
+```
+[Unit]
+Description=robot
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/v1
+Environment=ROBOT_ID=put-your-id-here
+Environment=ROBOT_SECRET_KEY=put-your-key-here
+ExecStart=yarn run start
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then run: `sudo systemctl enable robot` to enable auto boot
+Other options:
+Manual start: `sudo systemctl start robot`
+Status check: `sudo systemctl status robot`
+Manual stop: `sudo systemctl stop robot`
+Stop from auto boot: `sudo systemctl disable robot`
 
 ### Customisation:
 
 Duplicate the `start.js` file into `start-custom.js`, make the required adjustments in `start-custom.js`, and start the client like so:
 
 ```
-ROBOT_ID=abc123 ROBOT_SECRET=321cba yarn run start-custom
+ROBOT_ID=abc123 ROBOT_SECRET_KEY=321cba yarn run start-custom
 ```
