@@ -55,7 +55,8 @@ Add this to `/etc/systemd/system/robot.service`
 ```
 [Unit]
 Description=robot
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
