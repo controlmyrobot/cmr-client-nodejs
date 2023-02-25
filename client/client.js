@@ -2,10 +2,10 @@ const io = require('socket.io-client')
 const {SocketControl} = require('./socket-control')
 const {SocketTelemetry} = require('./socket-telemetry')
 const {SocketVideoH264} = require('./socket-video-h264')
-const {SocketVideoMJPEG} = require('./socket-video-mjpeg')
+const {SocketVideoJpeg} = require('./socket-video-jpeg')
 
 const config = {
-    backendEndpoint: process.env.BACKEND_ENDPOINT || 'https://controlmyrobot.com/',
+    backendEndpoint: process.env.BACKEND_ENDPOINT || 'https://controlmyrobot.com',
     robotId: process.env.ROBOT_ID || 'abc123',
     robotSecretKey: process.env.ROBOT_SECRET_KEY || '321cba'
 }
@@ -38,9 +38,9 @@ async function startRobotClient() {
             let initializedBackend
 
             switch (backend.type) {
-                case "SOCKET_VIDEO_MJPEG":
+                case "SOCKET_VIDEO_JPEG":
                     // Which video device are we going to read from? Will that appear in backend JSON file?
-                    initializedBackend = new SocketVideoMJPEG({io: io, backend: backend})
+                    initializedBackend = new SocketVideoJpeg({io: io, backend: backend})
                     break;
                 case "SOCKET_VIDEO_H264":
                     // Which video device are we going to read from? Will that appear in backend JSON file?

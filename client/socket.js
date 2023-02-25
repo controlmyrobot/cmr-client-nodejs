@@ -29,7 +29,7 @@ class SocketBase  {
     connect() {
         this.do('connecting')
 
-        const socketUri = `${this.backend.endpoint}/stream_robot/${this.backend.stream_robot_id}?actor=robot&key=${this.backend.stream_robot_key}`
+        const socketUri = `${this.backend.endpoint}/v1/stream_robot/${this.backend.stream_robot_id}?actor=robot&key=${this.backend.stream_robot_key}`
         this.socket = this.io(socketUri, {
             reconnection: false
         });
@@ -42,7 +42,7 @@ class SocketBase  {
 
         this.socket.io.on("reconnect_attempt", (attempt) => {
             if(attempt > 5){
-                this.do('reset')
+                console.error('Failed to connect after 5 attempts')
             }
         })
 
@@ -54,20 +54,28 @@ class SocketBase  {
             this.do('connected')
         })
 
+        this.socket.on('user_count', (user_count) => {
+            user_count = parseInt(user_count, 10)
+            if(user_count>=0){
+                this.do('user_count', user_count)
+            }
+        })
+
+        this.socket.on('user_connected', (data) => {
+            this.do('user_connected', data)
+        })
+
+        this.socket.on('user_disconnected', (data) => {
+            this.do('user_disconnected', data)
+        })
+
         this.socket.on("disconnect", () => {
-            this.do('reset')
+            console.error('Socket disconnected')
         })
     }
 
     connected() {
 
-    }
-
-    reset() {
-        this.socket.disconnect()
-        setTimeout(() => {
-            this.connect()
-        }, 2000);
     }
 }
 

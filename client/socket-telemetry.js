@@ -4,9 +4,6 @@ class SocketTelemetry extends SocketBase {
     clientType = 'SOCKET_TELEMETRY'
 
     connected() {
-        this.on('reset', () => {
-            this.log('system', 'resetting')
-        })
     }
 
     log(key, value, level = 'INFO') {
