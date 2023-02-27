@@ -38,7 +38,7 @@ const start = async () => {
                     console.log('Starting backendVideoJpeg ')
                     backendTelemetry?.log('system', 'starting jpeg stream')
 
-                    const videoCaptureCommand = `/usr/bin/libcamera-vid -n -t 0 --framerate 10 --rotation 180 --width 640 --height 480 --segment 1 --codec mjpeg --quality 40 -o tcp://127.0.0.1:${backendVideoJpeg.pipePort}`
+                    const videoCaptureCommand = `/usr/bin/libcamera-vid -n -t 0 --framerate 10 --rotation 180 --width 640 --height 480 --segment 1 --codec mjpeg --quality 40 -o tcp://127.0.0.1:${backendVideoJpeg.socketPipePort}`
                     jpegCaptureProcess = spawn('sh', ['-c', videoCaptureCommand])
                     spawnChildren.push(jpegCaptureProcess)
                     jpegCaptureProcess.on('close', (err) => {
@@ -81,15 +81,15 @@ const start = async () => {
 
                     // There are 3 ways to achieve h264 video capture:
                     // - libcamera-vid: if on a recent raspberry pi OS choose this
-                    const videoCaptureCommand = `/usr/bin/libcamera-vid -n -t 0 --framerate 10 --rotation 180 --intra 30 --inline 1 --width 640 --height 480 --bitrate 1000000 --codec h264 --profile baseline -o tcp://127.0.0.1:${backendVideoH264.pipePort}`
+                    const videoCaptureCommand = `/usr/bin/libcamera-vid -n -t 0 --framerate 10 --rotation 180 --intra 30 --inline 1 --width 640 --height 480 --bitrate 1000000 --codec h264 --profile baseline -o tcp://127.0.0.1:${backendVideoH264.socketPipePort}`
 
                     // - v4l-cat: configure v4l and stream raw /dev/video0 device (very fast)
                     // const configureV4lCommand = 'v4l2-ctl -v width=640,height=480,pixelformat=H264 -p 10 -c h264_profile=0,repeat_sequence_header=1,video_bitrate=500000'
                     // spawn('sh', ['-c', configureV4lCommand])
-                    // const videoCaptureCommand = `/bin/cat /dev/video0 | /bin/nc 127.0.0.1 ${backendVideoH264.pipePort} -w 2`
+                    // const videoCaptureCommand = `/bin/cat /dev/video0 | /bin/nc 127.0.0.1 ${backendVideoH264.socketPipePort} -w 2`
 
                     // - ffmpeg: probably don't do this, it's very resource intensive and slower than above options.
-                    // const videoCaptureCommand = `/usr/bin/ffmpeg -loglevel fatal -f v4l2 -i /dev/video0 -r 10 -tune zerolatency -s 640x480 -an -c:v libx264 -profile:v baseline -f h264 tcp://127.0.0.1:${backendVideoH264.pipePort}`
+                    // const videoCaptureCommand = `/usr/bin/ffmpeg -loglevel fatal -f v4l2 -i /dev/video0 -r 10 -tune zerolatency -s 640x480 -an -c:v libx264 -profile:v baseline -f h264 tcp://127.0.0.1:${backendVideoH264.socketPipePort}`
 
                     h264CaptureProcess = spawn('sh', ['-c', videoCaptureCommand])
                     spawnChildren.push(h264CaptureProcess)

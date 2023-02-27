@@ -31,8 +31,28 @@ async function startRobotClient() {
         console.log(`Initializing:`)
         console.log(` - Robot: ${json.robot_id}`)
         console.log(` - API version: ${json.api_version}`)
+        console.log(` - Hosts: ${json.hosts.length}`)
         console.log(` - Backends: ${json.backends.length}`)
         console.log(` `)
+
+        const socketHost = json.hosts.find(b => b.type === 'SOCKET')
+        // const socketRtsp = json.hosts.find(b => b.type === 'RTSP') // TODO
+        if(!socketHost){
+            throw new Error('Unable to find socket host')
+        }
+
+        const socketUri = `${socketHost.endpoint}/v1/stream_robot/?actor=robot&robot_id=${config.robotId}&stream_robot_id=${socketHost.stream_robot_id}&stream_robot_key=${socketHost.stream_robot_key}`
+        const socket = io(socketUri, {
+            // reconnection: false
+        })
+        socket.io.on("error", (error) => {
+            console.error("Socket error", error)
+        })
+        socket.io.on("reconnect_attempt", (attempt) => {
+            if(attempt > 5){
+                console.error('Failed to connect after 5 attempts')
+            }
+        })
 
         json.backends.forEach(backend => {
             let initializedBackend
@@ -40,44 +60,22 @@ async function startRobotClient() {
             switch (backend.type) {
                 case "SOCKET_VIDEO_JPEG":
                     // Which video device are we going to read from? Will that appear in backend JSON file?
-                    initializedBackend = new SocketVideoJpeg({io: io, backend: backend})
+                    initializedBackend = new SocketVideoJpeg({socket: socket, backend: backend})
                     break;
                 case "SOCKET_VIDEO_H264":
                     // Which video device are we going to read from? Will that appear in backend JSON file?
-                    initializedBackend = new SocketVideoH264({io: io, backend: backend})
+                    initializedBackend = new SocketVideoH264({socket: socket, backend: backend})
                     break;
                 case "SOCKET_TELEMETRY":
-                    initializedBackend = new SocketTelemetry({io: io, backend: backend})
+                    initializedBackend = new SocketTelemetry({socket: socket, backend: backend})
                     break;
                 case "SOCKET_CONTROL":
                 default:
-                    initializedBackend = new SocketControl({io: io, backend: backend})
+                    initializedBackend = new SocketControl({socket: socket, backend: backend})
                     break;
             }
 
             if (initializedBackend) {
-                initializedBackend.on('connecting', () => {
-                    console.log(`CONNECTING Backend:`)
-                    console.log(` - Type: ${backend.type}`)
-                    console.log(` - ID: ${backend.stream_robot_id}`)
-                    console.log(` `)
-                })
-
-                initializedBackend.on('reset', () => {
-                    console.log(`RESETTING Backend:`)
-                    console.log(` - Type: ${backend.type}`)
-                    console.log(` - ID: ${backend.stream_robot_id}`)
-                    console.log(` `)
-
-                    initializedBackend.reset()
-                })
-
-                initializedBackend.on('connected', () => {
-                    console.log(`CONNECTED Backend:`)
-                    console.log(` - Type: ${backend.type}`)
-                    console.log(` - ID: ${backend.stream_robot_id}`)
-                    console.log(` `)
-                })
                 initializedBackends.push(initializedBackend)
             }
         })
