@@ -29,7 +29,7 @@ class SocketBase  {
     connect() {
         this.do('connecting')
 
-        const socketUri = `${this.backend.endpoint}/v1/stream_robot/${this.backend.stream_robot_id}?actor=robot&key=${this.backend.stream_robot_key}`
+        const socketUri = `${this.backend.endpoint}/v1/stream_robot/robot/?stream_robot_id=${this.backend.stream_robot_id}&stream_robot_key=${this.backend.stream_robot_key}`
         this.socket = this.io(socketUri, {
             reconnection: false
         });
@@ -52,6 +52,12 @@ class SocketBase  {
                 this.connected()
             }
             this.do('connected')
+        })
+
+        this.socket.on("system_message", (data) => {
+            // If server going down for maintenance, logged in twice, stream terminated etc..
+            console.log(data)
+            this.do('system_message', data)
         })
 
         this.socket.on('user_count', (user_count) => {
