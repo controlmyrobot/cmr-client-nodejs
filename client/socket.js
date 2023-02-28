@@ -5,7 +5,7 @@ const isPortOpen = async (port) => {
         let s = NET.createServer();
         s.once('error', (err) => {
             s.close();
-            reject(false);
+            resolve(false);
         });
         s.once('listening', () => {
             resolve(true);
