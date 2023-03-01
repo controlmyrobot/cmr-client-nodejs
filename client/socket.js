@@ -122,6 +122,29 @@ class SocketBase  {
         }).listen(this.socketPipePort, () => {
         });
     }
+
+    async startGenericSender(name) {
+        this.socket.on(`${name}_received`, (data) => {
+            if(data && data.timestamp && data.robot_backend_id === this.robotBackendId()) {
+                const latencyDelay = Date.now() - data.timestamp
+                this.experiencingLatency = latencyDelay > 200
+                this.do('latency', latencyDelay)
+            }
+        })
+
+        this.on(`${name}_send`, chunk => {
+            // todo: check if we're sending too much data locally first and back off there as well
+            if (this.experiencingLatency) {
+                // send some empty data to server until we catch up
+                chunk = null
+            }
+            this.socket.volatile.emit(name, {
+                timestamp: Date.now(),
+                robot_backend_id: this.robotBackendId(),
+                chunk: chunk
+            })
+        })
+    }
 }
 
 exports.SocketBase = SocketBase
