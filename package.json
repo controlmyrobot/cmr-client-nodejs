@@ -10,6 +10,8 @@
     "@tsofist/rplidar": "^2.3.0",
     "child_process": "^1.0.2",
     "i2c-bus": "^5.2.2",
+    "jimp": "^0.22.7",
+    "node-zbarimg": "^1.0.1",
     "nodemon": "^2.0.20",
     "pca9685": "^5.0.0",
     "rpio": "^2.4.2",

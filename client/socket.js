@@ -1,39 +1,13 @@
-const NET = require("net");
-
-const isPortOpen = async (port) => {
-    return new Promise((resolve, reject) => {
-        let s = NET.createServer();
-        s.once('error', (err) => {
-            s.close();
-            resolve(false);
-        });
-        s.once('listening', () => {
-            resolve(true);
-            s.close();
-        });
-        s.listen(port);
-    });
-}
-
-const getNextOpenPort = async(startFrom = 8080) => {
-    let openPort = null;
-    while (startFrom < 65535 || !!openPort) {
-        if (await isPortOpen(startFrom)) {
-            openPort = startFrom;
-            break;
-        }
-        startFrom++;
-    }
-    return openPort;
-};
-
+const NET = require("net")
+const {getNextOpenPort} = require("./port-helper")
 
 class SocketBase  {
     clientType = 'unknown'
 
-    constructor({socket, backend}) {
+    constructor({socket, backend, config}) {
         this.socket = socket
         this.backend = backend
+        this.config = config
         this.hooks = []
         this.experiencingLatency = false
 
@@ -42,24 +16,13 @@ class SocketBase  {
         console.log(` - ID: ${this.backend.robot_backend_id}`)
         console.log(` `)
 
-        this.socket.on('user_count', (user_count) => {
-            console.log('Got user_count', user_count)
-            user_count = parseInt(user_count, 10)
-            if(user_count>=0){
-                this.do('user_count', user_count)
-            }
-        })
-
-        this.socket.on('user_connected', (data) => {
-            console.log('Got user_connected', data)
-            this.do('user_connected', data)
-        })
-
-        this.socket.on('user_disconnected', (data) => {
-            this.do('user_disconnected', data)
-        })
-
+        this.listenForMessagesFromCrm()
+        this.listenForLatency()
         this.init()
+    }
+
+    init() {
+
     }
 
     robotBackendId() {
@@ -80,69 +43,97 @@ class SocketBase  {
     do(action, args) {
         this.hooks.forEach(hook => {
             if(hook.action === action){
-                hook.callback(args);
+                hook.callback(args)
             }
         })
     }
 
-    init() {
+    listenForMessagesFromCrm() {
+        this.socket.on(`cmr2r_${this.backend.robot_backend_id}`, dataPack => {
+            if(dataPack.action) {
+                let filteredData = null
+                switch(dataPack.action){
+                    case 'user_count':
+                        filteredData = parseInt(dataPack.user_count, 10)
+                        break;
+                    default:
+                        filteredData = dataPack
+                }
+                this.do(`action_${dataPack.action}`, filteredData)
+            }
+        })
     }
 
-    connect() {
-        // when our script really wants to send data.
-    }
-
-    async startGenericSocketPipe(name) {
-        this.socketPipePort = await getNextOpenPort()
-
-        this.socket.on(`${name}_received`, (data) => {
-            if(data && data.timestamp && data.robot_backend_id === this.robotBackendId()) {
+    listenForLatency() {
+        this.on(`action_calculate_latency`, (data) => {
+            if(data && data.timestamp) {
                 const latencyDelay = Date.now() - data.timestamp
                 this.experiencingLatency = latencyDelay > 200
-                this.do('latency', latencyDelay)
+                this.do('latency_calculated', latencyDelay)
+                this.telemetryToUser(`latency`, latencyDelay)
             }
         })
+    }
+
+    logToUser(message) {
+        this.sendDataToServer({
+            timestamp: Date.now(),
+            message: message,
+        }, "log")
+    }
+
+    telemetryToUser(key, value){
+        this.sendDataToServer({
+            timestamp: Date.now(),
+            key: key,
+            value: value
+        }, "telemetry")
+    }
+
+    async startGenericSocketPipe(optionalDataCallback = null) {
+        this.socketPipePort = await getNextOpenPort()
 
         NET.createServer(serverSocket => {
-            serverSocket.on('data', chunk => {
-                // todo: check if we're sending too much data locally first and back off there as well
-                if (this.experiencingLatency) {
-                    // send some empty data to server until we catch up
-                    chunk = new Buffer.from([])
+            serverSocket.on('data', async data => {
+                if(this.pauseGenericSocketPipe) return // we might want to pause the default stream if we're sending some custom image data (e.g. You completed a quest)
+                if(optionalDataCallback){
+                    // Sometimes we will want to check the image for additional data, e.g. scan it for a QR code.
+                    optionalDataCallback(data)
                 }
-                this.socket.volatile.emit(name, {
-                    timestamp: Date.now(),
-                    robot_backend_id: this.robotBackendId(),
-                    chunk: chunk
-                })
-            });
+                this.sendDataToServer(data)
+            })
             serverSocket.on("end", () => {
-                console.log('Stopped receiving video stream...')
+                console.log('Stopped genericSocketPipe.')
             })
         }).listen(this.socketPipePort, () => {
         });
     }
 
-    async startGenericSender(name) {
-        this.socket.on(`${name}_received`, (data) => {
-            if(data && data.timestamp && data.robot_backend_id === this.robotBackendId()) {
-                const latencyDelay = Date.now() - data.timestamp
-                this.experiencingLatency = latencyDelay > 200
-                this.do('latency', latencyDelay)
-            }
+    // This takes an array of image buffers and sends them to the client spread over the desired duration.
+    playCustomImageStream(images, duration = 2000) {
+        this.pauseGenericSocketPipe = true
+        const imageSplitDuration = Math.floor(duration / images.length)
+        images.forEach((image, index) => {
+            setTimeout(() => {
+                this.sendDataToServer(image, null, true)
+            }, index * imageSplitDuration)
         })
+        return new Promise(resolve => setTimeout(() => {
+            this.pauseGenericSocketPipe = false
+            resolve()
+        }, duration))
+    }
 
-        this.on(`${name}_send`, chunk => {
-            // todo: check if we're sending too much data locally first and back off there as well
-            if (this.experiencingLatency) {
-                // send some empty data to server until we catch up
-                chunk = null
-            }
-            this.socket.volatile.emit(name, {
-                timestamp: Date.now(),
-                robot_backend_id: this.robotBackendId(),
-                chunk: chunk
-            })
+    sendDataToServer(chunk, channel = null, force = false) {
+        if (this.experiencingLatency && !force) {
+            // send some empty data to server until we catch up
+            chunk = null
+        }
+        // todo: also check if we're sending too much data locally first and back off there as well
+        this.socket.emit(`r2cmr_${this.backend.robot_backend_id}`, {
+            timestamp: Date.now(),
+            channel: channel,
+            chunk: chunk
         })
     }
 }

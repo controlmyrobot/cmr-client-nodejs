@@ -14,7 +14,7 @@ Install Raspberry Pi OS onto the SD card, following instructions from: https://w
 
 Once installed, ssh into your Raspberry Pi.
 
-Then on the Pi, please ensure `node`, `yarn`, and `ffmpeg` are available. Example:
+Then on the Pi, please ensure `node`, `yarn`, `ffmpeg`, and `zbar-tools` are available. Example:
 
 ```bash
 # NodeJS 19
@@ -26,7 +26,15 @@ curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | tee /usr/sha
 echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main" | tee /etc/apt/sources.list.d/yarn.list
 
 apt-get update
-apt install -y yarn ffmpeg nodejs gcc g++ make git python3-serial
+apt install -y vim yarn ffmpeg nodejs gcc g++ make git python3-serial zbar-tools
+```
+
+Then setup a `tmpfs` partition at `/var/tmpfs` so the code can read/write files in RAM quickly:
+
+```
+sudo mkdir /var/tmpfs
+sudo echo "tmpfs /var/tmpfs tmpfs nodev,nosuid,size=10M 0 0" >> /etc/fstab
+sudo mount -a
 ```
 
 Then clone a copy of this repository:
