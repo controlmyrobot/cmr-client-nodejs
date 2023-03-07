@@ -56,7 +56,7 @@ class Client  {
         try {
             // Grab the configuration for our robot backends from the server:
             const response = await fetch(
-                `${this.backendEndpoint}/api/v1/robot/setup/${this.config.robotId}`,
+                `${this.config.backendEndpoint}/api/v1/robot/setup/${this.config.robotId}`,
                 {
                     method: 'POST',
                     cache: 'no-cache',
