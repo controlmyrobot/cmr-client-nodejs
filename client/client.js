@@ -5,6 +5,7 @@ const {SocketTelemetry} = require('./socket-telemetry')
 const {SocketVideoH264} = require('./socket-video-h264')
 const {SocketVideoJpeg} = require('./socket-video-jpeg')
 const {SocketVideoSvg} = require('./socket-video-svg')
+const {SocketQuest} = require('./socket-quest')
 
 class Client  {
     constructor(config) {
@@ -137,6 +138,11 @@ class Client  {
                     case "SOCKET_CONTROL":
                         this.connectedBackends.push(
                             new SocketControl({socket: this.socket, backend: backend, config: this.config})
+                        )
+                        break;
+                    case "SOCKET_QUEST":
+                        this.connectedBackends.push(
+                            new SocketQuest({socket: this.socket, backend: backend, config: this.config})
                         )
                         break;
                 }

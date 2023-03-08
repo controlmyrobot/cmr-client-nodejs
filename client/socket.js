@@ -136,17 +136,6 @@ class SocketBase  {
             chunk: chunk
         })
     }
-
-    async questStepComplete({internal_quest_id, internal_quest_step_id, stream_user_id, credit_amount = 0, credit_message = null}) {
-        return await this.socket.emitWithAck(`quest_step_complete`, {
-            timestamp: Date.now(),
-            internal_quest_id,
-            internal_quest_step_id,
-            stream_user_id,
-            credit_amount,
-            credit_message
-        })
-    }
 }
 
 exports.SocketBase = SocketBase
