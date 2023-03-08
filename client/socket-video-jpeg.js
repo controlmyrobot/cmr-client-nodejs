@@ -15,20 +15,24 @@ class SocketVideoJpeg extends SocketBase {
     }
 
     maybeParseQrCode(data) {
-        // Look for QR code data every 2 seconds:
-        if(!this.lastLookedForQrData || (Date.now() - this.lastLookedForQrData) > 2000){
+        // Look for QR code data every 3 seconds:
+        if(!this.lastLookedForQrData || (Date.now() - this.lastLookedForQrData) > 3000){
             this.lastLookedForQrData = Date.now()
             const tmpFilename = `${this.config.tmpDir}/cmr-qr-code-${this.backend.robot_backend_id.replace(/[^a-zA-Z0-9]/g,'')}.jpg`
-            fs.writeFileSync(tmpFilename,data)
-            zbarimg(tmpFilename, (err, code) => {
-                if(code){
-                    if(code.startsWith('CMR:')) {
-                        this.do('found_qr_code', code)
-                    }else{
-                        console.error('Found a QR code, but it does not start with CMR:')
-                    }
+            fs.writeFile(tmpFilename,data, (err) => {
+                if(!err) {
+                    zbarimg(tmpFilename, (err, code) => {
+                        if(code){
+                            console.log('Found a QR code',code)
+                            if(code.startsWith('CMR:')) {
+                                this.do('found_qr_code', code)
+                            }else{
+                                console.error('Found a QR code, but it does not start with CMR:')
+                            }
+                        }
+                        fs.unlinkSync(tmpFilename)
+                    })
                 }
-                fs.unlinkSync(tmpFilename)
             })
         }
     }
