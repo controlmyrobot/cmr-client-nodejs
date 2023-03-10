@@ -30,7 +30,7 @@ class SocketVideoJpeg extends SocketBase {
                                 console.error('Found a QR code, but it does not start with CMR:')
                             }
                         }
-                        fs.unlinkSync(tmpFilename)
+                        try {fs.unlinkSync(tmpFilename)}catch(e){}
                     })
                 }
             })
