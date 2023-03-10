@@ -51,15 +51,7 @@ class SocketBase  {
     listenForMessagesFromCrm() {
         this.socket.on(`cmr2r_${this.backend.robot_backend_id}`, dataPack => {
             if(dataPack.action) {
-                let filteredData = null
-                switch(dataPack.action){
-                    case 'user_count':
-                        filteredData = parseInt(dataPack.user_count, 10)
-                        break;
-                    default:
-                        filteredData = dataPack
-                }
-                this.do(`action_${dataPack.action}`, filteredData)
+                this.do(`action_${dataPack.action}`, dataPack)
             }
         })
     }

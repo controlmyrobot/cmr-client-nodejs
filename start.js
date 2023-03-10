@@ -28,8 +28,19 @@ const start = async () => {
 
         // Send a user count metric back to the log whenever it changes:
         client.on('users_connected', (data) => {
-            if (data && data.user_ids) {
-                backendTelemetry.logToUser(`There are ${data.user_ids.length} total users connected`)
+            if(data && data.users) {
+                console.log(`There are ${data.users.length} total users connected`)
+                const userCountByPermission = data.users.reduce((v, user) => {
+                    if(user?.permissions?.control) v.control += 1
+                    if(user?.permissions?.view) v.view += 1
+                    return v
+                }, {
+                    control: 0,
+                    view: 0
+                })
+                backendTelemetry.logToUser(`There are ${data.users.length} total users connected.`)
+                backendTelemetry.logToUser(`Viewer Count: ${userCountByPermission.view}`)
+                backendTelemetry.logToUser(`Controller Count: ${userCountByPermission.control}`)
             }
         })
     }
@@ -39,7 +50,7 @@ const start = async () => {
         backendVideoJpeg.on('found_qr_code', async qr_code => {
             console.log("Found QR Code in image data: ", qr_code)
         })
-        backendVideoJpeg.on('action_user_count', (user_count) => {
+        client.on('user_count', (user_count) => {
             if (user_count > 0) {
                 // We only want to start our "expensive" video capture command when we have users connected:
                 if (!backendVideoJpeg.streamRunning) {

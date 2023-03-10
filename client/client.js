@@ -109,7 +109,10 @@ class Client  {
                 }
             })
             this.socket.on("users_connected", data => {
-                this.do('users_connected', data)
+                if(data && data.users) {
+                    this.do('users_connected', data)
+                    this.do('user_count', data.users.length)
+                }
             })
 
             json.backends.forEach(backend => {
