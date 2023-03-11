@@ -84,23 +84,37 @@ class Client  {
             }
 
             const socketUri = `${socketHost.endpoint}/v1/stream_robot`
-            this.socket = io(socketUri, { autoConnect: false })
-            this.socket.on("connect", () => {
-                this.socket.emit("authenticate", {
+            this.socket = io(socketUri, { autoConnect: false, transports: ["websocket"] })
+            this.socket.on("connect", async () => {
+                console.log("Socket Authentication: starting")
+                const authResult = await this.socket.emitWithAck("authenticate", {
                     actor: "robot",
                     robot_id: this.config.robotId,
                     stream_robot_id: socketHost.stream_robot_id,
                     stream_robot_key: socketHost.stream_robot_key
                 })
+                if(!authResult || !authResult.success){
+                    console.error("Socket Authentication: failed", authResult)
+                }
+            })
+            const attemptSocketReconnect = () => {
+                setTimeout(() => {
+                    console.log("Socket Authentication: reconnecting...")
+                    this.socket.io.open((err) => {
+                        if (err) {
+                            attemptSocketReconnect()
+                        }
+                    });
+                }, 2000)
+            }
+            this.socket.io.on("close", () => {
+                console.error("Socket Authentication: closed")
+                attemptSocketReconnect()
             })
             this.socket.io.on("error", (error) => {
                 console.error("Socket error", error)
             })
-            this.socket.io.on("reconnect_attempt", (attempt) => {
-                if(attempt > 5){
-                    console.error('Failed to connect after 5 attempts')
-                }
-            })
+
             this.socket.on("cmr_command", command => {
                 switch(command){
                     case 'new_configuration':
