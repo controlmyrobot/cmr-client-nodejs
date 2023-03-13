@@ -68,6 +68,7 @@ class SocketBase  {
     }
 
     logToUser(message) {
+        console.log(`Log message for user:`,message)
         this.sendDataToServer({
             timestamp: Date.now(),
             message: message,
@@ -75,6 +76,7 @@ class SocketBase  {
     }
 
     telemetryToUser(key, value){
+        console.log(`Telemetry for user: ${key}`,value)
         this.sendDataToServer({
             timestamp: Date.now(),
             key: key,
