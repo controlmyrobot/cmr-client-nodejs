@@ -26,7 +26,7 @@ curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | tee /usr/sha
 echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main" | tee /etc/apt/sources.list.d/yarn.list
 
 apt-get update
-apt install -y vim yarn ffmpeg nodejs gcc g++ make git python3-serial zbar-tools
+apt install -y vim yarn ffmpeg nodejs gcc g++ make git python3-serial zbar-tools libcamera-apps
 ```
 
 Then setup a `tmpfs` partition at `/var/tmpfs` so the code can read/write files in RAM quickly:
