@@ -4,7 +4,7 @@ const os = require('os')
 
 const start = async () => {
     const client = new Client({
-        backendEndpoint: process.env.BACKEND_ENDPOINT || 'https://controlmyrobot.com',
+        backendEndpoint: process.env.BACKEND_ENDPOINT || 'https://api.controlmyrobot.com',
         robotId: process.env.ROBOT_ID || 'abc123',
         robotSecretKey: process.env.ROBOT_SECRET_KEY || '321cba',
         tmpDir: '/var/tmpfs'

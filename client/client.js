@@ -13,7 +13,7 @@ class Client  {
         this.config = {
             robotId: config.robotId,
             robotSecretKey: config.robotSecretKey,
-            backendEndpoint: config.backendEndpoint || 'https://controlmyrobot.com',
+            backendEndpoint: config.backendEndpoint || 'https://api.controlmyrobot.com',
             tmpDir: config.tmpDir || '/tmp'
         }
         this.childProcesses = []
